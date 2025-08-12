@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: selfstudy
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: minhnghiemsw@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: password123
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  backend:
+    build: .
+    container_name: go_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      APP_PORT: 8080
+      DB_HOST: db          # quan trọng: trỏ tới service db, KHÔNG dùng localhost
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password123
+      DB_NAME: selfstudy
+      DB_SSLMODE: disable
+      DB_TIMEZONE: UTC
+      JWT_SECRET: dev_secret_please_change
+      ACCESS_TOKEN_TTL: 15m
+      REFRESH_TOKEN_TTL: 720h
+
+volumes:
+  pgdata:
