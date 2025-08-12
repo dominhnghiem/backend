@@ -5,15 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"your.module/name/domain/dto"
 	"your.module/name/domain/repository"
 	"your.module/name/domain/service"
-	"your.module/name/internal/helper"
 )
 
 var ErrInvalidRefresh = errors.New("invalid refresh token")
@@ -44,7 +41,8 @@ func (uc *RefreshTokenUsecase) Execute(ctx context.Context, in dto.RefreshReques
 		return nil, ErrInvalidRefresh
 	}
 
-	access, err := uc.Token.SignAccessToken(s.UserID, time.Duration(uc.AccessTTLSeconds)*time.Second)
+	dur := time.Duration(uc.AccessTTLSeconds) * time.Second
+	access, err := uc.Token.SignAccessToken(s.UserID, dur)
 	if err != nil {
 		return nil, err
 	}

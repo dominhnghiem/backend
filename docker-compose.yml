@@ -8,9 +8,14 @@ services:
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: selfstudy
     ports:
-      - "5432:5432"
+      - "5432:5432"        # tránh xung đột nếu đang chạy Postgres local
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   pgadmin:
     image: dpage/pgadmin4
@@ -22,7 +27,8 @@ services:
     ports:
       - "8081:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   backend:
     build: .
@@ -30,11 +36,9 @@ services:
     restart: always
     ports:
       - "8080:8080"
-    depends_on:
-      - db
     environment:
       APP_PORT: 8080
-      DB_HOST: db          # quan trọng: trỏ tới service db, KHÔNG dùng localhost
+      DB_HOST: db              # phải là tên service "db"
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: password123
@@ -44,6 +48,9 @@ services:
       JWT_SECRET: dev_secret_please_change
       ACCESS_TOKEN_TTL: 15m
       REFRESH_TOKEN_TTL: 720h
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

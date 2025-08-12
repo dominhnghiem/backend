@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -69,7 +68,4 @@ func (uc *LoginUsecase) Execute(ctx context.Context, in dto.LoginRequest, ua, ip
 		AccessToken:  access,
 		RefreshToken: refresh,
 	}, nil
-
-	log.Printf("[DEBUG] refresh_plain=%s", refresh)
-	log.Printf("[DEBUG] refresh_hash_saved=%s", hash)
 }
