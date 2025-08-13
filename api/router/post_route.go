@@ -7,9 +7,9 @@ import (
 )
 
 func MountPost(g *echo.Group, ctl *controller.PostController, jwtSecret string) {
-	auth := g.Group("/posts", middleware.JWTAuth(jwtSecret))
-	auth.POST("", ctl.CreateHandler)
-	auth.PUT("/:id", ctl.UpdateHandler)
-	auth.DELETE("/:id", ctl.DeleteHandler)
-	auth.GET("/feed", ctl.FeedHandler)
+	grp := g.Group("/posts", middleware.JWTAuth(jwtSecret))
+	grp.POST("", ctl.CreateHandler)
+	grp.GET("/feed", ctl.FeedHandler)
+	grp.PUT("/:id", ctl.UpdateHandler)
+	grp.DELETE("/:id", ctl.DeleteHandler)
 }

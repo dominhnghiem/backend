@@ -42,6 +42,10 @@ func (r *PostRepository) SoftDelete(ctx context.Context, id, authorID int64) err
 }
 
 func (r *PostRepository) ListFeedByAuthorIDs(ctx context.Context, authorIDs []int64, limit, offset int) ([]*repository.PostView, error) {
+	if len(authorIDs) == 0 {
+		return []*repository.PostView{}, nil
+	}
+
 	var rows []model.Post
 	if err := r.db.WithContext(ctx).
 		Where("author_id IN ? AND deleted_at IS NULL", authorIDs).

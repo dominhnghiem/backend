@@ -20,7 +20,7 @@ func (r *CommentRepository) Create(ctx context.Context, postID, authorID int64, 
 	return m.ID, nil
 }
 
-func (r *CommentRepository) DeleteSoft(ctx context.Context, id, authorID int64) error {
+func (r *CommentRepository) Delete(ctx context.Context, id, authorID int64) error {
 	return r.db.WithContext(ctx).
 		Where("id = ? AND author_id = ? AND deleted_at IS NULL", id, authorID).
 		Delete(&model.Comment{}).Error

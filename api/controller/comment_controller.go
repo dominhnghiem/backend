@@ -20,7 +20,11 @@ func NewCommentController(cu *social.CreateCommentUsecase, du *social.DeleteComm
 }
 
 func (cc *CommentController) CreateHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	userID, ok := c.Get("userID").(int64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "Unauthorized"})
+	}
+	uid := int64(userID)
 	pid, _ := strconv.ParseInt(c.Param("postID"), 10, 64)
 	var req dto.CreateCommentRequest
 	if err := c.Bind(&req); err != nil || req.Body == "" {
@@ -34,7 +38,10 @@ func (cc *CommentController) CreateHandler(c echo.Context) error {
 }
 
 func (cc *CommentController) DeleteHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	uid, ok := c.Get("userID").(int64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "Unauthorized"})
+	}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err := cc.Delete.Execute(c.Request().Context(), id, uid); err != nil {
 		return c.JSON(http.StatusInternalServerError, response.Error{Code: 500, Message: err.Error()})

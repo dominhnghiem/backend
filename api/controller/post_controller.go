@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"your.module/name/domain/dto"
@@ -21,12 +22,23 @@ func NewPostController(c *social.CreatePostUsecase, u *social.UpdatePostUsecase,
 	return &PostController{Create: c, Update: u, Delete: d, List: l}
 }
 
+func getUserID(c echo.Context) (int64, bool) {
+	v := c.Get("userID") // <-- KHỚP với middleware
+	id, ok := v.(int64)
+	return id, ok && id > 0
+}
+
 func (pc *PostController) CreateHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	uid, ok := getUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "unauthorized"})
+	}
+
 	var req dto.CreatePostRequest
-	if err := c.Bind(&req); err != nil || req.Body == "" {
+	if err := c.Bind(&req); err != nil || strings.TrimSpace(req.Body) == "" {
 		return c.JSON(http.StatusBadRequest, response.Error{Code: 400, Message: "invalid body"})
 	}
+
 	res, err := pc.Create.Execute(c.Request().Context(), uid, req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.Error{Code: 500, Message: err.Error()})
@@ -35,10 +47,14 @@ func (pc *PostController) CreateHandler(c echo.Context) error {
 }
 
 func (pc *PostController) UpdateHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	uid, ok := getUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "unauthorized"})
+	}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
 	var req dto.UpdatePostRequest
-	if err := c.Bind(&req); err != nil || req.Body == "" {
+	if err := c.Bind(&req); err != nil || strings.TrimSpace(req.Body) == "" {
 		return c.JSON(http.StatusBadRequest, response.Error{Code: 400, Message: "invalid body"})
 	}
 	if err := pc.Update.Execute(c.Request().Context(), id, uid, req.Body); err != nil {
@@ -48,7 +64,10 @@ func (pc *PostController) UpdateHandler(c echo.Context) error {
 }
 
 func (pc *PostController) DeleteHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	uid, ok := getUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "unauthorized"})
+	}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err := pc.Delete.Execute(c.Request().Context(), id, uid); err != nil {
 		return c.JSON(http.StatusInternalServerError, response.Error{Code: 500, Message: err.Error()})
@@ -57,7 +76,10 @@ func (pc *PostController) DeleteHandler(c echo.Context) error {
 }
 
 func (pc *PostController) FeedHandler(c echo.Context) error {
-	uid := c.Get("x-user-id").(int64)
+	uid, ok := getUserID(c)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.Error{Code: 401, Message: "unauthorized"})
+	}
 	posts, err := pc.List.Execute(c.Request().Context(), uid, 20, 0)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.Error{Code: 500, Message: err.Error()})

@@ -10,5 +10,5 @@ func NewDeleteCommentUsecase(c repository.CommentRepository) *DeleteCommentUseca
 }
 
 func (uc *DeleteCommentUsecase) Execute(ctx context.Context, id, authorID int64) error {
-	return uc.Comments.DeleteSoft(ctx, id, authorID)
+	return uc.Comments.Delete(ctx, id, authorID)
 }

@@ -12,7 +12,7 @@ import (
 // NewDB: mở kết nối GORM tới Postgres
 func NewDB(cfg Config) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		log.Fatalf("cannot open db: %v", err)
