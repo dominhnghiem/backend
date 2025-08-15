@@ -1,3 +1,4 @@
+// backend/backend/bootstrap/app.go
 package bootstrap
 
 import (
@@ -17,13 +18,32 @@ import (
 
 func NewAppWithDeps(db *gorm.DB, cfg Config) *echo.Echo {
 	e := echo.New()
+
+	// ======= CORS (CHO FE DEV) =======
+	// Đặt TRƯỚC khi mount routes.
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+		},
+		AllowMethods: []string{
+			echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.DELETE, echo.OPTIONS,
+		},
+		AllowHeaders: []string{
+			"Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With",
+		},
+		// Không bật AllowCredentials nếu bạn dùng Bearer token (không cookie).
+	}))
+	// =================================
+
+	// Các middleware chung
 	e.Use(middleware.Recover(), middleware.Logger(), middleware.RequestID())
 	e.HideBanner = true
 	e.HidePort = true
 
 	// Repositories
 	userRepo := gormrepo.NewUserRepository(db)
-	sessRepo := gormrepo.NewSessionRepository(db) // <-- cần cho refresh/logout
+	sessRepo := gormrepo.NewSessionRepository(db) // cần cho refresh/logout
 	postRepo := gormrepo.NewPostRepository(db)
 	cmtRepo := gormrepo.NewCommentRepository(db)
 	likeRepo := gormrepo.NewLikeRepository(db)
@@ -33,7 +53,6 @@ func NewAppWithDeps(db *gorm.DB, cfg Config) *echo.Echo {
 	tokenSvc := auth.NewHS256TokenService(cfg.JWTSecret)
 
 	// Usecases
-	// NewLoginUsecase(users, sessions, tokenSvc, accessTTL, refreshTTL)
 	loginUC := auth.NewLoginUsecase(
 		userRepo,
 		sessRepo,
@@ -43,8 +62,7 @@ func NewAppWithDeps(db *gorm.DB, cfg Config) *echo.Echo {
 	)
 	signupUC := auth.NewSignupUsecase(userRepo)
 
-	// NewRefreshTokenUsecase(sessions, tokenSvc, accessTTLSeconds)
-	// Nếu ctor của bạn nhận "giây", dùng dòng dưới:
+	// Nếu ctor nhận "giây", dùng Seconds() như dưới
 	refreshUC := auth.NewRefreshTokenUsecase(
 		sessRepo,
 		tokenSvc,
@@ -52,7 +70,6 @@ func NewAppWithDeps(db *gorm.DB, cfg Config) *echo.Echo {
 	)
 
 	logoutUC := auth.NewLogoutUsecase(sessRepo)
-
 	profileUC := useuser.NewProfileUsecase(userRepo)
 
 	// Social usecases
@@ -75,7 +92,7 @@ func NewAppWithDeps(db *gorm.DB, cfg Config) *echo.Echo {
 	lfCtl := controller.NewLikeFollowController(likeUC, followUC)
 
 	// Routes
-	api := router.RegisterRoutes(e)
+	api := router.RegisterRoutes(e) // thường sẽ trả group /api/v1
 	e.GET("/debug/routes", func(c echo.Context) error {
 		type R struct{ Method, Path string }
 		rs := make([]R, 0, len(e.Routes()))
